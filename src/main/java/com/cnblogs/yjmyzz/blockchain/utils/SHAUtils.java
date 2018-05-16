@@ -1,4 +1,4 @@
-package com.cnblogs.yjmyzz.blockchain;
+package com.cnblogs.yjmyzz.blockchain.utils;
 
 import org.apache.commons.codec.binary.Hex;
 

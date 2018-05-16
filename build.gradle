@@ -37,6 +37,8 @@ dependencies {
 	compile('com.alibaba:fastjson:1.2.29')
 	compile('org.apache.commons:commons-collections4:4.1')
 	compile('commons-codec:commons-codec:1.11')
+	compile "io.springfox:springfox-swagger2:2.7.0"
+	compile "io.springfox:springfox-swagger-ui:2.7.0"
 	compileOnly('org.projectlombok:lombok')
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }
