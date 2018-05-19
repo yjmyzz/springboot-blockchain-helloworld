@@ -1,7 +1,9 @@
 package com.cnblogs.yjmyzz.blockchain.model;
 
 import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.annotation.JSONField;
 import com.cnblogs.yjmyzz.blockchain.utils.SHAUtils;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
@@ -16,15 +18,19 @@ import java.util.List;
 public class BlockChain {
 
     @ApiModelProperty(value = "当前交易列表", dataType = "List<Transaction>")
+    @JSONField(serialize = false)
+    @JsonIgnore
     private List<Transaction> currentTransactions;
 
     @ApiModelProperty(value = "所有交易列表", dataType = "List<Transaction>")
     private List<Transaction> transactions;
 
     @ApiModelProperty(value = "区块列表", dataType = "List<BlockChain>")
+    @JSONField(serialize = false)
+    @JsonIgnore
     private List<BlockChain> chain;
 
-    @ApiModelProperty(value = "上一个区块的哈希值", dataType = "String")
+    @ApiModelProperty(value = "上一个区块的哈希值", dataType = "String", example = "f461ac428043f328309da7cac33803206cea9912f0d4e8d8cf2786d21e5ff403")
     private String previousHash = "";
 
     @ApiModelProperty(value = "工作量证明", dataType = "Integer", example = "100")
@@ -36,17 +42,26 @@ public class BlockChain {
     @ApiModelProperty(value = "当前区块的时间戳", dataType = "Long", example = "1526458171000")
     private Long timestamp = 0L;
 
+    @ApiModelProperty(value = "当前区块的哈希值", dataType = "String", example = "g451ac428043f328309da7cac33803206cea9912f0d4e8d8cf2786d21e5ff401")
+    private String hash;
+
     public BlockChain() {
         currentTransactions = new ArrayList<>();
         chain = new ArrayList<>();
         transactions = new ArrayList<>();
     }
 
-    public static String getHash(BlockChain block) {
-        String json = JSON.toJSONString(block);
-        return SHAUtils.getSHA256Str(json);
+    public String getHash() {
+        String json = JSON.toJSONString(this.currentTransactions) +
+                JSON.toJSONString(this.transactions) +
+                JSON.toJSONString(chain) +
+                previousHash + proof + index + timestamp;
+        hash = SHAUtils.getSHA256Str(json);
+        return hash;
     }
 
+    @JSONField(serialize = false)
+    @JsonIgnore
     public BlockChain getLastBlock() {
         if (CollectionUtils.isEmpty(chain)) {
             return null;
@@ -58,9 +73,9 @@ public class BlockChain {
         BlockChain block = new BlockChain();
         block.index = chain.size() + 1L;
         block.timestamp = System.currentTimeMillis();
+        block.transactions.addAll(currentTransactions);
         block.proof = proof;
         block.previousHash = previousHash;
-        transactions.addAll(currentTransactions);
         currentTransactions.clear();
         chain.add(block);
         return block;

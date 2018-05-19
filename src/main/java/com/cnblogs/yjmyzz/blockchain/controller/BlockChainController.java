@@ -4,6 +4,8 @@ import com.cnblogs.yjmyzz.blockchain.model.BlockChain;
 import com.cnblogs.yjmyzz.blockchain.model.Transaction;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
@@ -11,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 @Scope("prototype")
 @Controller
@@ -22,14 +23,13 @@ import java.util.UUID;
         basePath = "/", value = "区块链示例")
 public class BlockChainController {
 
-    private static BlockChain blockChain;
-    private static String nodeId;
+    @Autowired
+    @Qualifier("blockChain")
+    private BlockChain blockChain;
 
-    static {
-        blockChain = new BlockChain();
-        blockChain.newSeedBlock();
-        nodeId = UUID.randomUUID().toString().replace("-", "");
-    }
+    @Autowired
+    @Qualifier("nodeId")
+    private String nodeId;
 
     @GetMapping(value = "/chain")
     @ResponseBody
@@ -63,7 +63,7 @@ public class BlockChainController {
         Integer lastProof = lastBlock.getProof();
         Integer proof = blockChain.proofOfWork(lastProof);
         blockChain.newTransaction("0", nodeId, BigDecimal.ONE);
-        BlockChain block = blockChain.newBlock(proof, null);
+        BlockChain block = blockChain.newBlock(proof, lastBlock.getHash());
         map.put("message", "New Block Forged");
         map.put("index", block.getIndex());
         map.put("transactions", block.getTransactions());
