@@ -7,11 +7,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import lombok.Data;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.util.CollectionUtils;
+import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 @Data
 @ApiModel(description = "区块链")
@@ -29,6 +30,11 @@ public class BlockChain {
     @JSONField(serialize = false)
     @JsonIgnore
     private List<BlockChain> chain;
+
+    @ApiModelProperty(value = "集群的节点列表", dataType = "Set<String>")
+    @JSONField(serialize = false)
+    @JsonIgnore
+    private Set<String> nodes;
 
     @ApiModelProperty(value = "上一个区块的哈希值", dataType = "String", example = "f461ac428043f328309da7cac33803206cea9912f0d4e8d8cf2786d21e5ff403")
     private String previousHash = "";
@@ -49,13 +55,18 @@ public class BlockChain {
         currentTransactions = new ArrayList<>();
         chain = new ArrayList<>();
         transactions = new ArrayList<>();
+        nodes = new HashSet<>();
     }
 
     public String getHash() {
-        String json = JSON.toJSONString(this.currentTransactions) +
-                JSON.toJSONString(this.transactions) +
-                JSON.toJSONString(chain) +
-                previousHash + proof + index + timestamp;
+        return genHash(this);
+    }
+
+    private String genHash(BlockChain blockChain) {
+        String json = JSON.toJSONString(blockChain.getCurrentTransactions()) +
+                JSON.toJSONString(blockChain.getTransactions()) +
+                JSON.toJSONString(blockChain.getChain()) +
+                blockChain.getPreviousHash() + blockChain.getProof() + blockChain.getIndex() + blockChain.getTimestamp();
         hash = SHAUtils.getSHA256Str(json);
         return hash;
     }
@@ -67,6 +78,10 @@ public class BlockChain {
             return null;
         }
         return chain.get(chain.size() - 1);
+    }
+
+    public void registerNode(String address) {
+        nodes.add(address);
     }
 
     public BlockChain newBlock(Integer proof, String previousHash) {
@@ -108,6 +123,47 @@ public class BlockChain {
         newBlock(100, "1");
     }
 
+
+    private boolean validChain(List<BlockChain> chain) {
+        if (CollectionUtils.isEmpty(chain)) {
+            return false;
+        }
+
+        BlockChain lastBlock = chain.get(0);
+        int currentIndex = 1;
+        while (currentIndex < chain.size()) {
+            BlockChain block = chain.get(currentIndex);
+            if (block.getPreviousHash().equals(genHash(lastBlock))) {
+                return false;
+            }
+
+            if (validProof(lastBlock.getProof(), block.getProof())) {
+                return false;
+            }
+            currentIndex += 1;
+        }
+        return true;
+    }
+
+    public boolean resolveConflicts() {
+        int maxLength = getChain().size();
+        List<BlockChain> newChain = new ArrayList<>();
+        for (String node : getNodes()) {
+            RestTemplate template = new RestTemplate();
+            Map map = template.getForObject(node, Map.class);
+            int length = MapUtils.getInteger(map, "length");
+            List<BlockChain> chain = JSON.parseObject(JSON.toJSONString(MapUtils.getObject(map, "chain")), List.class);
+            if (length > maxLength && validChain(chain)) {
+                maxLength = length;
+                newChain = chain;
+            }
+        }
+        if (!CollectionUtils.isEmpty(newChain)) {
+            this.chain = newChain;
+            return true;
+        }
+        return false;
+    }
 
 //    public static void main(String[] args) {
 //        BlockChain chain = new BlockChain();

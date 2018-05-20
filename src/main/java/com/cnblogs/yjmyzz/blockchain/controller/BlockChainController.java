@@ -4,6 +4,7 @@ import com.cnblogs.yjmyzz.blockchain.model.BlockChain;
 import com.cnblogs.yjmyzz.blockchain.model.Transaction;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Scope;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Scope("prototype")
@@ -69,6 +71,39 @@ public class BlockChainController {
         map.put("transactions", block.getTransactions());
         map.put("proof", block.getProof());
         map.put("previousHash", block.getPreviousHash());
+        return map;
+    }
+
+
+    @GetMapping(value = "/register")
+    @ResponseBody
+    @ApiOperation(value = "注册集群节点")
+    public Map<String, Object> register(@RequestBody List<String> nodes) {
+        if (CollectionUtils.isNotEmpty(nodes)) {
+            for (String n : nodes) {
+                blockChain.registerNode(n);
+            }
+        }
+        Map<String, Object> map = new HashMap<>();
+        map.put("message", "New nodes have been added");
+        map.put("totalNodes", blockChain.getNodes());
+        return map;
+    }
+
+
+    @GetMapping(value = "/resolve")
+    @ResponseBody
+    @ApiOperation(value = "解决不同节点间的数据冲突")
+    public Map<String, Object> resolve() {
+        boolean replaced = blockChain.resolveConflicts();
+        Map<String, Object> map = new HashMap<>();
+        if (replaced) {
+            map.put("message", "Our chain was replaced");
+            map.put("newChain", blockChain.getChain());
+        } else {
+            map.put("message", "Our chain is authoritative");
+            map.put("chain", blockChain.getChain());
+        }
         return map;
     }
 }
