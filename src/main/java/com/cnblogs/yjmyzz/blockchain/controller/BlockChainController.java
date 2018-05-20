@@ -2,6 +2,7 @@ package com.cnblogs.yjmyzz.blockchain.controller;
 
 import com.cnblogs.yjmyzz.blockchain.model.BlockChain;
 import com.cnblogs.yjmyzz.blockchain.model.Transaction;
+import com.cnblogs.yjmyzz.blockchain.vo.RegisterRequest;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
 import org.apache.commons.collections4.CollectionUtils;
@@ -75,12 +76,12 @@ public class BlockChainController {
     }
 
 
-    @GetMapping(value = "/register")
+    @PostMapping(value = "/register")
     @ResponseBody
     @ApiOperation(value = "注册集群节点")
-    public Map<String, Object> register(@RequestBody List<String> nodes) {
-        if (CollectionUtils.isNotEmpty(nodes)) {
-            for (String n : nodes) {
+    public Map<String, Object> register(@RequestBody RegisterRequest request) {
+        if (CollectionUtils.isNotEmpty(request.getNodes())) {
+            for (String n : request.getNodes()) {
                 blockChain.registerNode(n);
             }
         }

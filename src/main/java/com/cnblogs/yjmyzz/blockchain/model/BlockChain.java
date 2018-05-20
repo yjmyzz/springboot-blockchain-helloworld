@@ -150,7 +150,7 @@ public class BlockChain {
         List<BlockChain> newChain = new ArrayList<>();
         for (String node : getNodes()) {
             RestTemplate template = new RestTemplate();
-            Map map = template.getForObject(node, Map.class);
+            Map map = template.getForObject(node + "chain", Map.class);
             int length = MapUtils.getInteger(map, "length");
             List<BlockChain> chain = JSON.parseObject(JSON.toJSONString(MapUtils.getObject(map, "chain")), List.class);
             if (length > maxLength && validChain(chain)) {
