@@ -131,17 +131,18 @@ public class BlockChain {
             return false;
         }
 
-        BlockChain lastBlock = chain.get(0);
+        BlockChain previousBlock = chain.get(0);
         int currentIndex = 1;
         while (currentIndex < chain.size()) {
             BlockChain block = chain.get(currentIndex);
-            if (!block.getPreviousHash().equals(lastBlock.getHash())) {
+            if (!block.getPreviousHash().equals(previousBlock.getHash())) {
                 return false;
             }
 
-            if (!validProof(lastBlock.getProof(), block.getProof())) {
+            if (!validProof(previousBlock.getProof(), block.getProof())) {
                 return false;
             }
+            previousBlock = block;
             currentIndex += 1;
         }
         return true;
