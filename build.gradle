@@ -42,3 +42,8 @@ dependencies {
 	compileOnly('org.projectlombok:lombok')
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }
+
+
+task 8081 << {
+	bootRun.systemProperty 'server.port', '8081'
+}
