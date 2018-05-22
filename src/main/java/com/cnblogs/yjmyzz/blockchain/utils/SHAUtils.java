@@ -6,6 +6,9 @@ import java.io.UnsupportedEncodingException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+/**
+ * @author yangjunming
+ */
 public class SHAUtils {
 
     public static String getSHA256Str(String str) {

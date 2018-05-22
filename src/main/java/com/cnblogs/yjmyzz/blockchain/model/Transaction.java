@@ -6,8 +6,9 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 
+
 /**
- * @author jimmy
+ * @author yangjunming
  */
 @Data
 @ApiModel(description = "交易信息")

@@ -14,9 +14,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
+/**
+ * @author yangjunming
+ */
 @Scope("prototype")
 @Controller
 @RequestMapping(value = "/")
@@ -104,6 +106,21 @@ public class BlockChainController {
         } else {
             map.put("message", "Our chain is authoritative");
             map.put("chain", blockChain.getChain());
+        }
+        return map;
+    }
+
+
+    @GetMapping(value = "/validate")
+    @ResponseBody
+    @ApiOperation(value = "验证区块链自身是否合法")
+    public Map<String, Object> validate() {
+        boolean result = blockChain.validChain(blockChain.getChain());
+        Map<String, Object> map = new HashMap<>();
+        if (result) {
+            map.put("message", "this chain is valid");
+        } else {
+            map.put("message", "this chain is illegal");
         }
         return map;
     }

@@ -1,7 +1,8 @@
 package com.cnblogs.yjmyzz.blockchain.model;
 
-import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.TypeReference;
 import com.alibaba.fastjson.annotation.JSONField;
+import com.cnblogs.yjmyzz.blockchain.utils.FastJsonUtil;
 import com.cnblogs.yjmyzz.blockchain.utils.SHAUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.annotations.ApiModel;
@@ -14,9 +15,14 @@ import org.springframework.web.client.RestTemplate;
 import java.math.BigDecimal;
 import java.util.*;
 
+/**
+ * @author yangjunming
+ */
 @Data
 @ApiModel(description = "区块链")
 public class BlockChain {
+
+    private final static FastJsonUtil jsonUtil = new FastJsonUtil();
 
     @ApiModelProperty(value = "当前交易列表", dataType = "List<Transaction>")
     @JSONField(serialize = false)
@@ -59,14 +65,10 @@ public class BlockChain {
     }
 
     public String getHash() {
-        return genHash(this);
-    }
-
-    private String genHash(BlockChain blockChain) {
-        String json = JSON.toJSONString(blockChain.getCurrentTransactions()) +
-                JSON.toJSONString(blockChain.getTransactions()) +
-                JSON.toJSONString(blockChain.getChain()) +
-                blockChain.getPreviousHash() + blockChain.getProof() + blockChain.getIndex() + blockChain.getTimestamp();
+        String json = jsonUtil.toJson(this.getCurrentTransactions()) +
+                jsonUtil.toJson(this.getTransactions()) +
+                jsonUtil.toJson(this.getChain()) +
+                this.getPreviousHash() + this.getProof() + this.getIndex() + this.getTimestamp();
         hash = SHAUtils.getSHA256Str(json);
         return hash;
     }
@@ -114,9 +116,9 @@ public class BlockChain {
     }
 
     public Boolean validProof(Integer lastProof, Integer proof) {
+        System.out.println("validProof==>lastProof:" + lastProof + ",proof:" + proof);
         String guessHash = SHAUtils.getSHA256Str(String.format("{%d}{%d}", lastProof, proof));
-        System.out.println(guessHash);
-        return guessHash.startsWith("0000");
+        return guessHash.startsWith("00");
     }
 
     public void newSeedBlock() {
@@ -124,7 +126,7 @@ public class BlockChain {
     }
 
 
-    private boolean validChain(List<BlockChain> chain) {
+    public boolean validChain(List<BlockChain> chain) {
         if (CollectionUtils.isEmpty(chain)) {
             return false;
         }
@@ -133,11 +135,11 @@ public class BlockChain {
         int currentIndex = 1;
         while (currentIndex < chain.size()) {
             BlockChain block = chain.get(currentIndex);
-            if (block.getPreviousHash().equals(genHash(lastBlock))) {
+            if (!block.getPreviousHash().equals(lastBlock.getHash())) {
                 return false;
             }
 
-            if (validProof(lastBlock.getProof(), block.getProof())) {
+            if (!validProof(lastBlock.getProof(), block.getProof())) {
                 return false;
             }
             currentIndex += 1;
@@ -152,7 +154,9 @@ public class BlockChain {
             RestTemplate template = new RestTemplate();
             Map map = template.getForObject(node + "chain", Map.class);
             int length = MapUtils.getInteger(map, "length");
-            List<BlockChain> chain = JSON.parseObject(JSON.toJSONString(MapUtils.getObject(map, "chain")), List.class);
+            String json = jsonUtil.toJson(MapUtils.getObject(map, "chain"));
+            List<BlockChain> chain = jsonUtil.fromJson(json, new TypeReference<List<BlockChain>>() {
+            });
             if (length > maxLength && validChain(chain)) {
                 maxLength = length;
                 newChain = chain;
@@ -164,12 +168,5 @@ public class BlockChain {
         }
         return false;
     }
-
-//    public static void main(String[] args) {
-//        BlockChain chain = new BlockChain();
-//        chain.newSeedBlock();
-//        System.out.println(JSON.toJSONString(chain, true));
-////        System.out.println(chain.validProof(100L, 1L));
-//    }
 
 }
